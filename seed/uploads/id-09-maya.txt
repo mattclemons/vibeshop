@@ -1,0 +1,6 @@
+VibeShop photo ID upload
+holder: maya@vibeshop.test
+document: utility-bill
+expires: 2026-01-03
+reference: VIBE-0009
+never marked private

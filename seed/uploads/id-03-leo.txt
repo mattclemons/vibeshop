@@ -1,0 +1,6 @@
+VibeShop photo ID upload
+holder: leo@vibeshop.test
+document: national-id-card
+expires: 2030-06-18
+reference: VIBE-0003
+never marked private

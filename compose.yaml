@@ -1,0 +1,120 @@
+name: vibeshop
+
+# Everything bound to the box's LAN address explicitly. Never 0.0.0.0.
+# Bridge ports are scoped by the lab DOCKER-USER chain; host-networked Caddy by INPUT.
+# RFC1918 clients and an optional extra client network are allowed.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vibeshop
+      POSTGRES_PASSWORD: vibeshop
+      POSTGRES_DB: vibeshop
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - "${LAB_IP:-10.3.10.137}:5432:5432"
+    volumes:
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./seed/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vibeshop -d vibeshop"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  minio:
+    image: ${MINIO_IMAGE:-ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z}
+    # A disposable lab data volume, with fixture data only.
+    user: "0:0"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: vibeshop
+      MINIO_ROOT_PASSWORD: vibeshop
+    ports:
+      - "${LAB_IP:-10.3.10.137}:9000:9000"
+      - "${LAB_IP:-10.3.10.137}:9001:9001"
+    volumes:
+      - miniodata:/data
+
+  # one-shot: create the uploads bucket, drop the anonymous policy, copy the 12 photo IDs in
+  minio-setup:
+    image: ${MINIO_MC_IMAGE:-ghcr.io/teableio/minio-mc:RELEASE.2025-04-16T18-13-26Z}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        n=0
+        until mc alias set local http://minio:9000 vibeshop vibeshop >/dev/null 2>&1; do
+          n=$$((n+1)); [ "$$n" -lt 90 ] || exit 1; sleep 2
+        done
+        mc mb --ignore-existing local/uploads
+        mc anonymous set download local/uploads
+        mc cp --recursive /seed/uploads/ local/uploads/ >/dev/null
+        mc ls local/uploads
+    volumes:
+      - ./seed/uploads:/seed/uploads:ro
+    depends_on:
+      - minio
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "${LAB_IP:-10.3.10.137}:8025:8025"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JWT_SECRET: sunshine
+    env_file:
+      - .env
+    environment:
+      MINIO_PUBLIC_ENDPOINT: http://${LAB_IP:-10.3.10.137}:9000
+    ports:
+      - "${LAB_IP:-10.3.10.137}:3000:3000"
+    volumes:
+      - ./seed/uploads:/srv/uploads:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mailhog:
+        condition: service_started
+
+  # host network so reverse_proxy ${LAB_IP:-10.3.10.137}:3000 and the bind mount behave like the snippet
+  caddy:
+    image: caddy:2-alpine
+    network_mode: host
+    environment:
+      LAB_IP: ${LAB_IP:-10.3.10.137}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./:/srv/vibeshop:ro
+    depends_on:
+      - app
+
+  # Host-aware static server: tracker.js on the default vhost, takeover page on legacy.vibeshop.test
+  attacker:
+    image: nginx:alpine
+    ports:
+      - "${LAB_IP:-10.3.10.137}:8081:8081"
+    volumes:
+      - ./attacker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./attacker/www:/www:ro
+
+  # cloud metadata mock on the aliased link-local address
+  metadata:
+    image: python:3-alpine
+    network_mode: host
+    volumes:
+      - ./metadata:/srv/metadata:ro
+    command: ["python3", "-u", "/srv/metadata/server.py"]
+
+volumes:
+  pgdata:
+  miniodata:

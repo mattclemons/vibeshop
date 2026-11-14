@@ -1,0 +1,6 @@
+VibeShop photo ID upload
+holder: sam@vibeshop.test
+document: bank-statement
+expires: 2026-01-04
+reference: VIBE-0010
+never marked private

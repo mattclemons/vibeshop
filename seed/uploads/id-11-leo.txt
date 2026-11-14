@@ -1,0 +1,6 @@
+VibeShop photo ID upload
+holder: leo@vibeshop.test
+document: payslip
+expires: 2026-01-05
+reference: VIBE-0011
+never marked private

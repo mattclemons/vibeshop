@@ -1,0 +1,12 @@
+node_modules/
+.next/
+# anchored, or it swallows web/app/out/ and route.js never gets tracked
+/out/
+*.log
+smoke/
+
+
+.lab.env
+.aliased
+.lab-state/
+__pycache__/

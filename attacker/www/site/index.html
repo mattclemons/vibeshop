@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>attacker.test</title></head>
+<body style="font-family: monospace">
+<h1>attacker.test</h1>
+<p>Serving on 10.3.10.137:8081. Default vhost.</p>
+<ul>
+  <li><a href="/tracker.js">/tracker.js</a> (loaded by the storefront, no integrity attribute)</li>
+  <li><a href="/frame.html">/frame.html</a> (clickjacking decoy)</li>
+</ul>
+<pre id="out"></pre>
+<script src="/tracker.js"></script>
+<script>document.getElementById('out').textContent = JSON.stringify(window.vibeshopTracker);</script>
+</body>
+</html>

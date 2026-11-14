@@ -1,0 +1,6 @@
+VibeShop photo ID upload
+holder: quinn@vibeshop.test
+document: student-card
+expires: 2027-09-01
+reference: VIBE-0007
+never marked private

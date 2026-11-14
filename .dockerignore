@@ -1,0 +1,8 @@
+.git
+node_modules
+.next
+smoke
+exploits
+tests
+modules
+*.log
