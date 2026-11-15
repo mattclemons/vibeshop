@@ -1,17 +1,8 @@
 import { cookies } from 'next/headers';
 import { q } from './db';
 
-// module 20: the cart. it does the arithmetic on the server, which reads as careful, and it does the
-// arithmetic on whatever it was handed, which is the flaw.
-//
-//   qty arrives from a form or a query string as text and goes into a numeric column unvalidated
-//   the promo code is a counter that increments, so calling the endpoint twice discounts twice
-//
-// nothing here takes an amount from the client. module 4 is the client's price; this is the client's maths.
-
 const NEW = () => globalThis.crypto?.randomUUID?.() || 'c' + Math.random().toString(36).slice(2);
 
-// the cart is identified by a cookie, so a shop works before anyone logs in
 export async function cartId() {
   const jar = await cookies();
   let id = jar.get('cart_id')?.value;
@@ -34,28 +25,41 @@ export async function cartState(id) {
   ).rows;
 
   const promo = (await q('SELECT code, discount FROM cart_promos WHERE cart_id = $1', [id])).rows[0] || null;
-
   const subtotal = lines.reduce((s, l) => s + Number(l.line_cents), 0);
   const total = Math.round(subtotal * (1 - Number(promo?.discount || 0)));
-
   return { cart_id: id, lines, subtotal, promo, total };
 }
 
+// validate at the boundary: a quantity is a positive integer, and nothing else reaches the column
+export function validateQty(raw) {
+  const s = String(raw).trim();
+  if (!/^\d+$/.test(s) || Number(s) < 1) {
+    const e = new Error('invalid quantity: ' + raw);
+    e.status = 400;
+    e.value = raw;
+    throw e;
+  }
+  return Number(s);
+}
+
 export async function addLine(id, productId, qtyRaw) {
+  const qty = validateQty(qtyRaw);
   await q(
     `INSERT INTO carts (cart_id, product_id, qty) VALUES ($1, $2, $3)
        ON CONFLICT (cart_id, product_id) DO UPDATE SET qty = excluded.qty`,
-    [id, productId, qtyRaw]
+    [id, productId, qty]
   );
   return cartState(id);
 }
 
-// the coupon. discount accumulates instead of being set, so the tenth click is a tenth discount
+// assign the discount from a rate table, so calling twice is the same as calling once
+const RATES = { VIBE10: 0.1 };
 export async function applyPromo(id, code) {
+  const discount = RATES[code] ?? 0;
   await q(
-    `INSERT INTO cart_promos (cart_id, code, discount) VALUES ($1, $2, 0.1)
-       ON CONFLICT (cart_id) DO UPDATE SET code = excluded.code, discount = cart_promos.discount + 0.1`,
-    [id, code]
+    `INSERT INTO cart_promos (cart_id, code, discount) VALUES ($1, $2, $3)
+       ON CONFLICT (cart_id) DO UPDATE SET code = excluded.code, discount = excluded.discount`,
+    [id, code, discount]
   );
   return cartState(id);
 }

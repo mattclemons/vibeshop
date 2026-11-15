@@ -8,6 +8,6 @@ export async function POST(req) {
     const f = await req.formData();
     code = f.get('code');
   }
-  const state = await applyPromo(id, String(code || ''));
+  const state = await applyPromo(id, String(code || '').trim().toUpperCase());
   return Response.json(state);
 }

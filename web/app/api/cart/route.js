@@ -1,6 +1,5 @@
 import { cartId, cartState, addLine } from '../../../lib/cart';
 
-// the qty comes in as a string, from a query string or a form, and goes straight into the maths
 async function readQty(req, sp) {
   let qty = sp.get('qty');
   if (qty == null && (req.headers.get('content-type') || '').includes('form')) {
@@ -21,6 +20,13 @@ export async function POST(req) {
   const productId = sp.get('product_id');
   if (!productId) return Response.json({ error: 'product_id required' }, { status: 400 });
 
-  const state = await addLine(id, productId, await readQty(req, sp));
-  return Response.json(state);
+  try {
+    const state = await addLine(id, productId, await readQty(req, sp));
+    return Response.json(state);
+  } catch (e) {
+    if (e && e.status === 400) {
+      return Response.json({ error: e.message, value: String(e.value) }, { status: 400 });
+    }
+    throw e;
+  }
 }
