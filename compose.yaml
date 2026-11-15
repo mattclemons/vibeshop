@@ -51,7 +51,7 @@ services:
           n=$$((n+1)); [ "$$n" -lt 90 ] || exit 1; sleep 2
         done
         mc mb --ignore-existing local/uploads
-        mc anonymous set download local/uploads
+        mc anonymous set none local/uploads
         mc cp --recursive /seed/uploads/ local/uploads/ >/dev/null
         mc ls local/uploads
     volumes:
