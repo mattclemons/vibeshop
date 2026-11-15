@@ -10,11 +10,17 @@ export const dynamic = 'force-dynamic';
 export default async function Orders() {
   const session = await getSession({ cookies: await cookies() });
 
-  const rows = (
-    await q(`SELECT o.id, o.user_id, o.amount, o.status, o.created_at, u.email AS owner
-               FROM orders o LEFT JOIN users u ON u.id = o.user_id
-              ORDER BY o.id`)
-  ).rows;
+  const rows = session
+    ? (
+        await q(
+          `SELECT o.id, o.user_id, o.amount, o.status, o.created_at, u.email AS owner
+             FROM orders o LEFT JOIN users u ON u.id = o.user_id
+            WHERE o.user_id = $1
+            ORDER BY o.id`,
+          [Number(session.sub)]
+        )
+      ).rows
+    : [];
 
   return (
     <main>
