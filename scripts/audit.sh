@@ -34,21 +34,28 @@ case "${1:-}" in
   --modules)
     artifacts_present
     require_clean_main
+    failed=0
     for n in $ALL; do
-      bash scripts/reseed.sh >/dev/null
-      timeout 240 bash "exploits/$n/run.sh"
-      bash scripts/reseed.sh >/dev/null
-      rc=0; timeout 240 bash "tests/$n/test.sh" || rc=$?
-      [ "$rc" = 1 ] || { echo "test $n: expected exit 1 on main; got $rc" >&2; exit 1; }
+      bash scripts/reseed.sh >/dev/null 2>&1
+      erc=0; timeout 240 bash "exploits/$n/run.sh" >/dev/null 2>&1 || erc=$?
+      bash scripts/reseed.sh >/dev/null 2>&1
+      trc=0; timeout 240 bash "tests/$n/test.sh" >/dev/null 2>&1 || trc=$?
+      if [ "$erc" = 0 ] && [ "$trc" = 1 ]; then
+        echo "  ok    module $n (exploit 0, test 1 on main)"
+      else
+        echo "  FAIL  module $n: exploit exit $erc (want 0), test exit $trc (want 1)"
+        failed=1
+      fi
     done
-    echo 'Twenty supplied module checks matched main expectations.'
+    [ "$failed" = 0 ] && echo 'Twenty supplied module checks matched main expectations.' \
+      || { echo 'Some modules did not match main expectations (see FAIL lines).' >&2; exit 1; }
     ;;
 
   --branches)
     artifacts_present
     require_clean_main
     shift
-    sel=("$@"); [ ${#sel[@]} -gt 0 ] || mapfile -t sel < <(echo "$ALL")
+    sel=("$@"); [ ${#sel[@]} -gt 0 ] || sel=($(echo "$ALL"))
 
     echo '== main is flawed: exploits exit 0, tests exit 1'
     for n in "${sel[@]}"; do

@@ -16,3 +16,7 @@ wait_for minio "http://$LAB_IP:9000/minio/health/live"
 wait_for attacker "http://$LAB_IP:8081/"
 wait_for mailhog "http://$LAB_IP:8025/api/v2/messages"
 wait_for metadata 'http://169.254.169.254/latest/meta-data/instance-id'
+
+# module 2: publish dumb-http git metadata so the served .git is cloneable (the exposure)
+git update-server-info 2>/dev/null || true
+
