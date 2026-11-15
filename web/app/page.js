@@ -39,7 +39,7 @@ export default async function Home() {
       </footer>
 
       {/* module 7: third party script, no integrity, no version pin */}
-      <script src="http://attacker.test:8081/tracker.js"></script>
+      <script src="http://attacker.test:8081/tracker.js" integrity="sha384-VQg7684aJ4dUDxzsnMUGTykzMlV+f43vhyvwIL3QcsqmY3BmRdFV25WEuVS01J5S" crossOrigin="anonymous"></script>
     </main>
   );
 }
