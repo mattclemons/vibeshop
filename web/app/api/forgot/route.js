@@ -2,7 +2,9 @@ import crypto from 'crypto';
 import { q } from '../../../lib/db';
 import { sendMail } from '../../../lib/mail';
 
-// the reset link is built from whatever Host the request carried
+// The link is built from a configured origin, never from the request Host.
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'http://vibeshop.test';
+
 export async function POST(req) {
   const ct = req.headers.get('content-type') || '';
   const body = ct.includes('json') ? await req.json() : Object.fromEntries(new URLSearchParams(await req.text()));
@@ -16,19 +18,12 @@ export async function POST(req) {
   const token = crypto.randomUUID().replace(/-/g, '');
   await q('UPDATE users SET reset_token = $1 WHERE id = $2', [token, found.rows[0].id]);
 
-  const host = req.headers.get('host');
-  const link = 'http://' + host + '/reset?token=' + token;
-
-  await sendMail({
-    to: email,
-    subject: 'Reset your VibeShop password',
-    text: 'Reset your password: ' + link,
-  });
-
-  return Response.json({ ok: true, link, host });
+  const link = SITE_ORIGIN + '/reset?token=' + token;
+  await sendMail({ to: email, subject: 'Reset your VibeShop password', text: 'Reset your password: ' + link });
+  return Response.json({ ok: true, link, origin: SITE_ORIGIN });
 }
 
 export async function GET(req) {
   const email = req.nextUrl.searchParams.get('email') || 'maya@vibeshop.test';
-  return POST({ headers: new Headers({ host: req.headers.get('host') || '', 'content-type': 'application/json' }), json: async () => ({ email }) });
+  return POST({ headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ email }) });
 }
