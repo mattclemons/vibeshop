@@ -2,7 +2,8 @@ import { q } from '../../../lib/db';
 import { charge } from '../../../lib/stripe';
 import { getSession } from '../../../lib/auth';
 
-// the amount is whatever the client says it is. the product price is never consulted.
+// The price is recomputed server-side from the product id. The posted amount is reported back for
+// transparency but never charged.
 export async function POST(req) {
   const ct = req.headers.get('content-type') || '';
   let body;
@@ -13,10 +14,12 @@ export async function POST(req) {
   }
 
   const productId = Number(body.productId);
-  const amount = Number(body.amount);
+  const posted = Number(body.amount);
 
-  // prep for module 18: stamp the owner. logged-out checkouts get null, which the orders routes never
-  // think about again on main.
+  const pr = await q('SELECT price_cents FROM products WHERE id = $1', [productId]);
+  if (!pr.rows.length) return Response.json({ error: 'no such product' }, { status: 404 });
+  const amount = pr.rows[0].price_cents;
+
   const session = await getSession(req);
   const r = await q(
     'INSERT INTO orders (product_id, user_id, amount, status) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -28,5 +31,5 @@ export async function POST(req) {
   if (body.redirect || req.nextUrl.searchParams.has('redirect')) {
     return Response.redirect(new URL('/order/' + r.rows[0].id, 'http://' + req.headers.get('host')), 303);
   }
-  return Response.json({ ok: true, charged_cents: amount, charge: paid.id, order: r.rows[0] });
+  return Response.json({ ok: true, posted_cents: posted, charged_cents: amount, charge: paid.id, order: r.rows[0] });
 }
