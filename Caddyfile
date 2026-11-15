@@ -3,25 +3,12 @@
 # The shop answers on 80 under its own name, and on 8080 for any name so IP-based scripts and
 # checks keep working. Hostless on 8080, host-matched on 80.
 #
-# Why 8080 is hostless: /api/whoami and module 16 both need a request with an arbitrary Host to
-# still match, and a host-qualified address would fall through to Caddy's empty default response.
-#
-# Why 80 is host-matched for the shop, and forwards everything else: the shop answers for its own
-# name, and anything else on 80 is handed to the attacker origin with Host preserved. That is what
-# makes an open redirect land somewhere real: vibeshop.test/out?to=http://evil.test/phish ends up
-# on the attacker's phishing copy of the shop, with no port in the URL.
-#
-# legacy.vibeshop.test therefore reaches the attacker on 80 as well as directly on 8081.
+# The checkout .git directory is no longer served on either port.
 
 :80 {
 	bind {$LAB_IP}
 
 	@myshop host vibeshop.test {$LAB_IP}
-
-	handle /.git/* {
-		root * /srv/vibeshop
-		file_server
-	}
 
 	handle @myshop {
 		reverse_proxy {$LAB_IP}:3000 {
@@ -38,11 +25,6 @@
 
 :8080 {
 	bind {$LAB_IP}
-
-	handle /.git/* {
-		root * /srv/vibeshop
-		file_server
-	}
 
 	handle {
 		reverse_proxy {$LAB_IP}:3000 {
