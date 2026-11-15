@@ -8,7 +8,7 @@ for q in 0 -1 1.5 abc; do
   resp=$(C -b "$J" -c "$J" -w '\n%{http_code}' -X POST "$BASE8080/api/cart?product_id=8&qty=$q")
   code=${resp##*$'\n'}; body=${resp%$'\n'*}
   [ "$code" = 400 ] && pass "qty=$q rejected (400)" || fail "qty=$q -> $code"
-  printf '%s' "$body" | grep -qF "$q" && pass "qty=$q quoted back" || fail "qty=$q not echoed"
+  printf '%s' "$body" | grep -qF -- "$q" && pass "qty=$q quoted back" || fail "qty=$q not echoed"
 done
 C -b "$J" -c "$J" -o /dev/null -X POST "$BASE8080/api/cart?product_id=8&qty=3"
 for i in $(seq 1 12); do C -b "$J" -c "$J" -o /dev/null -X POST "$BASE8080/api/cart/promo?code=VIBE10"; done
