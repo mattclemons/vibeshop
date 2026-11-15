@@ -12,8 +12,6 @@ services:
       POSTGRES_PASSWORD: vibeshop
       POSTGRES_DB: vibeshop
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
-    ports:
-      - "${LAB_IP:-10.3.10.137}:5432:5432"
     volumes:
       - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
