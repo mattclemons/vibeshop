@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // module 17: ship the browser build's source maps to production
+  // module 13: maps are still served and still name the file, but without the original source text
   productionBrowserSourceMaps: true,
   experimental: { cpus: 2 },
-
-  // nothing here sets X-Frame-Options or CSP frame-ancestors (module 18)
+  webpack: (config, { dev }) => {
+    if (!dev) config.devtool = 'nosources-source-map';
+    return config;
+  },
 };
 
 export default nextConfig;
