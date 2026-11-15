@@ -58,7 +58,7 @@ export default async function Product({ params, searchParams }) {
           <li key={r.id}>
             <b>{r.author}</b>{' '}
             {/* module 19, sink two: raw html, so a review can carry tags, and no escaping at all */}
-            <span dangerouslySetInnerHTML={{ __html: r.body }} />
+            <span dangerouslySetInnerHTML={{ __html: esc(r.body) }} />
           </li>
         ))}
       </ul>
