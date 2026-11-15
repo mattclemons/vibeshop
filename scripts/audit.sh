@@ -48,7 +48,7 @@ case "${1:-}" in
     artifacts_present
     require_clean_main
     shift
-    sel=("$@"); [ ${#sel[@]} -gt 0 ] || sel=($(echo "$ALL"))
+    sel=("$@"); [ ${#sel[@]} -gt 0 ] || mapfile -t sel < <(echo "$ALL")
 
     echo '== main is flawed: exploits exit 0, tests exit 1'
     for n in "${sel[@]}"; do
