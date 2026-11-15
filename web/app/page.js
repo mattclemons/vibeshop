@@ -32,7 +32,6 @@ export default async function Home() {
 
       <footer>
         <div>
-          questions? <Link href="/out?to=http://legacy.vibeshop.test:8081/">legacy.vibeshop.test</Link> |{' '}
           <a href="/api/import?url=http://169.254.169.254/latest/meta-data/">import metadata</a>
         </div>
         <div>reset links are mailed by <Link href="/login">/api/forgot</Link></div>
