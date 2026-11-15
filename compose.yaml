@@ -69,7 +69,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        JWT_SECRET: sunshine
+        JWT_SECRET: 7116a2cf0f65e81d21fa717acb753a28eef31755a10864ae1c6f8632762788e5
     env_file:
       - .env
     environment:
