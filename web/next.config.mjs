@@ -1,10 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // module 17: ship the browser build's source maps to production
   productionBrowserSourceMaps: true,
   experimental: { cpus: 2 },
-
-  // nothing here sets X-Frame-Options or CSP frame-ancestors (module 18)
+  // module 14: refuse framing from any origin
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
