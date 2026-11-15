@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { q } from '../../lib/db';
+import { sortColumn } from '../../lib/searchSort';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,13 +9,13 @@ export const dynamic = 'force-dynamic';
 export default async function Search({ searchParams }) {
   const sp = await searchParams;
   const term = sp.q || '';
-  const sort = sp.sort || 'id';
-  const sql = `SELECT id, name, price_cents, image FROM products WHERE name ILIKE '%${term}%' ORDER BY ${sort} LIMIT 20`;
+  const sort = sortColumn(sp.sort || 'id');
+  const sql = `SELECT id, name, price_cents, image FROM products WHERE name ILIKE $1 ORDER BY ${sort} LIMIT 20`;
 
   let rows = [];
   let err = null;
   try {
-    rows = (await q(sql)).rows;
+    rows = (await q(sql, ['%' + term + '%'])).rows;
   } catch (e) {
     err = e.message;
   }
