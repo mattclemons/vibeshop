@@ -79,7 +79,7 @@ apply_fix() {
   esac
 }
 
-sel=("$@"); [ ${#sel[@]} -gt 0 ] || mapfile -t sel < <(seq -w 1 20)
+sel=("$@"); [ ${#sel[@]} -gt 0 ] || sel=($(seq -w 1 20))
 for n in "${sel[@]}"; do
   git checkout -B "fix/$n" main >/dev/null
   MSG=''
